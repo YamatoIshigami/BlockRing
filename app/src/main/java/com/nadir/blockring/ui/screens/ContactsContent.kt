@@ -16,6 +16,7 @@ import com.nadir.blockring.data.ussd.UssdManager
 import com.nadir.blockring.model.Contact
 import com.nadir.blockring.ui.components.ContactSection
 import com.nadir.blockring.ui.components.EmergencySection
+import com.nadir.blockring.ui.components.SectionHeader
 import com.nadir.blockring.ui.components.UsedSection
 import com.nadir.blockring.ui.permissions.hasContactsPermission
 
@@ -46,6 +47,10 @@ fun ContactsContent() {
 
         item {
             UsedSection(ussdCodes)
+        }
+
+        item {
+            SectionHeader(emoji = "👥", title = "Контакты", count = contacts.size)
         }
 
         item {
