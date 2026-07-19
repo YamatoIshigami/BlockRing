@@ -2,8 +2,10 @@ package com.nadir.blockring.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -44,13 +47,26 @@ fun BlockedContent() {
     val blockedManager = remember { BlockedNumbersManager(context) }
     val contactsManager = remember { ContactsManager(context) }
 
+    var blockedNumbers by remember { mutableStateOf<List<String>?>(null) }
+
     LaunchedEffect(Unit) {
         blockedManager.removeIfExistsInContacts(contactsManager)
+        blockedNumbers = blockedManager.getBlocked().toList()
     }
 
-    val blockedNumbers = blockedManager.getBlocked().toList()
+    val currentBlocked = blockedNumbers
 
-    if (blockedNumbers.isEmpty()) {
+    if (currentBlocked == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (currentBlocked.isEmpty()) {
         EmptyState(
             emoji = "🚫",
             message = "Нет заблокированных номеров",
@@ -64,10 +80,13 @@ fun BlockedContent() {
     ) {
 
         item {
-            SectionHeader(emoji = "🚫", title = "Заблокированные номера", count = blockedNumbers.size)
+            SectionHeader(emoji = "🚫", title = "Заблокированные номера", count = currentBlocked.size)
         }
 
-        items(blockedNumbers) { number ->
+        items(
+            items = currentBlocked,
+            key = { it }
+        ) { number ->
 
             var showMenu by remember { mutableStateOf(false) }
 

@@ -44,15 +44,18 @@ class BlockedNumbersManager(
 
     }
 
-    fun removeIfExistsInContacts(
+    suspend fun removeIfExistsInContacts(
         contactsManager: ContactsManager
     ) {
 
+        val contactNumbers = contactsManager
+            .loadAllContacts()
+            .map { it.phoneNumber }
+            .toSet()
+
         val blocked = getBlocked().toMutableSet()
 
-        blocked.removeAll { number ->
-            contactsManager.isContact(number)
-        }
+        blocked.removeAll { number -> number in contactNumbers }
 
         prefs.edit()
             .putStringSet("numbers", blocked)

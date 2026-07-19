@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -35,125 +37,138 @@ import androidx.compose.ui.unit.sp
 import com.nadir.blockring.data.hidden.HiddenContactsManager
 import com.nadir.blockring.model.Contact
 
-@Composable
-fun ContactSection(
+/**
+ * Lazily renders a list of contacts inside an existing LazyColumn.
+ * IMPORTANT: call this directly inside a LazyColumn { ... } block —
+ * do NOT wrap it in item { } or the whole list will be composed eagerly again.
+ */
+fun LazyListScope.contactSection(
     contacts: List<Contact>,
     onHideContact: (Contact) -> Unit = {},
     onUnhideContact: (Contact) -> Unit = {},
     isHiddenScreen: Boolean = false
 ) {
-    var selectedContact by remember { mutableStateOf<Contact?>(null) }
+    items(
+        items = contacts,
+        key = { it.phoneNumber }
+    ) { contact ->
+        ContactRow(
+            contact = contact,
+            isHiddenScreen = isHiddenScreen,
+            onHideContact = onHideContact,
+            onUnhideContact = onUnhideContact
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+    }
+}
+
+@Composable
+private fun ContactRow(
+    contact: Contact,
+    isHiddenScreen: Boolean,
+    onHideContact: (Contact) -> Unit,
+    onUnhideContact: (Contact) -> Unit
+) {
     var showMenu by remember { mutableStateOf(false) }
     var showHideDialog by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val hiddenManager = remember { HiddenContactsManager(context) }
 
-    for (contact in contacts) {
-        Box {
-            Card(
+    Box {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { showMenu = true }
+                ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = {},
-                        onLongClick = {
-                            selectedContact = contact
-                            showMenu = true
-                        }
-                    ),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    EmojiAvatar(
-                        emoji = if (isHiddenScreen) "🙈" else "👤",
-                        containerColor = if (isHiddenScreen)
-                            MaterialTheme.colorScheme.secondaryContainer
-                        else
-                            MaterialTheme.colorScheme.primaryContainer
-                    )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = contact.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = contact.phoneNumber,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Text(
-                        text = "⋮",
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .combinedClickable(
-                                onClick = {
-                                    selectedContact = contact
-                                    showMenu = true
-                                },
-                                onLongClick = {}
-                            )
-                    )
-                }
-            }
-
-            DropdownMenu(
-                expanded = showMenu && selectedContact == contact,
-                onDismissRequest = {
-                    showMenu = false
-                }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("📋 Копировать номер") },
-                    onClick = {
-                        clipboardManager.setText(
-                            AnnotatedString(contact.phoneNumber)
-                        )
-
-                        Toast.makeText(
-                            context,
-                            "📋 Номер скопирован",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        showMenu = false
-                    }
+                EmojiAvatar(
+                    emoji = if (isHiddenScreen) "🙈" else "👤",
+                    containerColor = if (isHiddenScreen)
+                        MaterialTheme.colorScheme.secondaryContainer
+                    else
+                        MaterialTheme.colorScheme.primaryContainer
                 )
 
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            if (isHiddenScreen)
-                                "👁️ Раскрыть"
-                            else
-                                "🙈 Скрыть"
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = contact.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = contact.phoneNumber,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Text(
+                    text = "⋮",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .combinedClickable(
+                            onClick = { showMenu = true },
+                            onLongClick = {}
                         )
-                    },
-                    onClick = {
-                        showMenu = false
-                        showHideDialog = true
-                    }
                 )
             }
         }
-        Spacer(modifier = Modifier.height(10.dp))
+
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("📋 Копировать номер") },
+                onClick = {
+                    clipboardManager.setText(
+                        AnnotatedString(contact.phoneNumber)
+                    )
+
+                    Toast.makeText(
+                        context,
+                        "📋 Номер скопирован",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    showMenu = false
+                }
+            )
+
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (isHiddenScreen)
+                            "👁️ Раскрыть"
+                        else
+                            "🙈 Скрыть"
+                    )
+                },
+                onClick = {
+                    showMenu = false
+                    showHideDialog = true
+                }
+            )
+        }
     }
 
-    if (showHideDialog && selectedContact != null) {
+    if (showHideDialog) {
         AlertDialog(
             onDismissRequest = {
                 showHideDialog = false
@@ -178,11 +193,11 @@ fun ContactSection(
                 TextButton(
                     onClick = {
                         if (isHiddenScreen) {
-                            hiddenManager.unhide(selectedContact!!.phoneNumber)
-                            onUnhideContact(selectedContact!!)
+                            hiddenManager.unhide(contact.phoneNumber)
+                            onUnhideContact(contact)
                         } else {
-                            hiddenManager.hide(selectedContact!!.phoneNumber)
-                            onHideContact(selectedContact!!)
+                            hiddenManager.hide(contact.phoneNumber)
+                            onHideContact(contact)
                         }
                         showHideDialog = false
                     }

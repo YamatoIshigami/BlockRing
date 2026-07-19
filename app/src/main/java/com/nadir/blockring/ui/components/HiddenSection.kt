@@ -1,16 +1,19 @@
 package com.nadir.blockring.ui.components
 
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.LazyListScope
 import com.nadir.blockring.model.Contact
 
-@Composable
-fun HiddenSection(
-    contacts: List<Contact>
+fun LazyListScope.hiddenSection(
+    contacts: List<Contact>,
+    onUnhideContact: (Contact) -> Unit = {}
 ) {
-    SectionHeader(emoji = "🙈", title = "Скрытые контакты", count = contacts.size)
+    item {
+        SectionHeader(emoji = "🙈", title = "Скрытые контакты", count = contacts.size)
+    }
 
-    ContactSection(
+    contactSection(
         contacts = contacts,
-        isHiddenScreen = true
+        isHiddenScreen = true,
+        onUnhideContact = onUnhideContact
     )
 }

@@ -9,7 +9,7 @@ class UssdManager(
     private val context: Context
 ) {
 
-    fun getUssdCodes(): List<UssdCode> {
+    suspend fun getUssdCodes(): List<UssdCode> {
 
         val telephonyManager =
             context.getSystemService(Context.TELEPHONY_SERVICE)
@@ -46,7 +46,6 @@ class UssdManager(
                     .replace(",", "")
                     .trim()
             }
-            }
-
     }
 
+}
